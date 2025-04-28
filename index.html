@@ -1,1 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDS 엔트리 생성기</title>
+    <script src="https://cdn.jsdelivr.net/npm/handsontable@14.4/dist/handsontable.full.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/handsontable@14.4/dist/handsontable.full.min.css" rel="stylesheet">
+    <style>
+        /* --- 스타일 (기존과 동일) --- */
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 98%; margin: auto; background-color: #f4f4f4; }
+        h1, h2 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        #passengerGrid { width: 100%; height: 300px; overflow: auto; margin-bottom: 10px; }
+        .htInvalid { background-color: #ffcccc !important; }
+        .button-group button { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="date"], button { padding: 10px 15px; border: 1px solid #ccc; border-radius: 4px; margin-right: 5px; }
+        input[type="text"]#departureDateInput { width: 150px; }
+        button { background-color: #007bff; color: white; border-color: #007bff; cursor: pointer;}
+        button:hover { background-color: #0056b3; }
+        button.secondary { background-color: #6c757d; border-color: #6c757d; }
+        button.secondary:hover { background-color: #5a6268; }
+        button.copy-btn { padding: 4px 10px; font-size: 0.85em; margin-left: 10px; }
+        button.copied { background-color: #28a745; border-color: #28a745; }
+        .output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        #departureDateSection { background-color: #fff0f0; padding: 15px; border: 1px solid #e0b0b0; border-radius: 4px; margin-bottom: 15px; display: none; }
+        #departureDateConfirmMsg, #departureDateConfirmButtons { margin-top: 10px; }
+        #departureDateConfirmButtons { display: none; }
+        #statusMessages { margin-top: 15px; padding: 10px; background-color: #e9e9e9; border: 1px solid #ddd; border-radius: 4px; white-space: pre-wrap; font-size: 0.9em; color: #555; min-height: 40px; overflow-y: auto; max-height: 150px; }
+        #statusMessages .error { color: #d9534f; font-weight: bold; }
+        #statusMessages .info { color: #31708f; }
+        #statusMessages .process { color: #0056b3; font-weight: bold; }
+        #statusMessages .success { color: #28a745; font-weight: bold;}
+        pre { background-color: #fff; padding: 15px; border: 1px solid #ccc; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
+        .output-section { margin-top: 20px; }
+        .input-example { margin-bottom: 15px; font-size: 0.9em; }
+        /* 이미지 스타일 추가 */
+        .input-example img {
+            max-width: 100%; /* 이미지 너비가 부모 요소를 넘지 않도록 */
+            height: auto; /* 비율 유지 */
+            border: 1px solid #ccc; /* 테이블과 유사한 테두리 */
+            display: block; /* margin 적용을 위해 */
+            margin-top: 5px; /* 제목과의 간격 */
+        }
+        #dateErrorMsg { color: #d9534f; font-size: 0.85em; margin-left: 10px; }
+    </style>
+</head>
+<body>
 
+    <h1>항공 예약 엔트리 생성기 (셀 입력 방식 v6 - 복사 버튼 추가)</h1>
+    <p>ERP에서 예약일행 탭에 정보를 복사하여 아래 표에 붙여넣거나 직접 입력하세요. ERP와 동일한 11개 컬럼 구조이며, 필요한 정보 외에는 무시됩니다.</p>
+
+    <div class="input-example">
+        <strong>입력 예시 (아래 표 형식 참고):</strong>
+        <img src="https://www.naeiltour.co.kr/images/web/%EC%98%88%EC%8B%9C.png" alt="입력 예시 이미지">
+    </div>
+
+    <div id="passengerGrid"></div>
+
+    <div class="button-group">
+        <button id="clearAllBtn" class="secondary">전체 지우기</button>
+    </div>
+
+    <div id="departureDateSection">
+         <p>⚠️ 예약에 유아(INF)가 포함되어 있어 정확한 개월 수 계산이 필요합니다. <strong>여행 출발일을 알려주세요.</strong></p>
+         <label for="departureDateInput">여행 출발일:</label>
+         <input type="text" id="departureDateInput" placeholder="YYYY-MM-DD">
+         <span id="dateErrorMsg"></span>
+         <div id="departureDateConfirmMsg"></div>
+         <div id="departureDateConfirmButtons">
+             <button id="confirmDateYes">네, 맞습니다</button>
+             <button id="confirmDateNo">아니오 (다시 입력)</button>
+         </div>
+         <p style="font-size: 0.85em; color: #555; margin-top: 5px;">(반드시 'YYYY-MM-DD' 형식으로 입력하거나 붙여넣기 하세요. 예: 2025-12-25)</p>
+    </div>
+
+    <button id="processButton">엔트리 생성</button>
+
+    <div id="statusMessages">처리 상태 메시지가 여기에 표시됩니다.</div>
+
+    <div class="output-section">
+        <div class="output-header">
+            <h2>항공권 NM 형식</h2>
+            <button id="copyNmBtn" class="secondary copy-btn">복사</button>
+        </div>
+        <pre id="nmOutput">결과가 여기에 표시됩니다.</pre>
+    </div>
+    <div class="output-section">
+         <div class="output-header">
+            <h2>세이버(Sabre) 엔트리 양식</h2>
+            <button id="copySabreBtn" class="secondary copy-btn">복사</button>
+        </div>
+        <pre id="sabreOutput">결과가 여기에 표시됩니다.</pre>
+    </div>
+
+    <script>
+        // --- DOM Elements (복사 버튼 추가) ---
+        const gridContainer = document.getElementById('passengerGrid');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const departureDateSection = document.getElementById('departureDateSection');
+        const departureDateInput = document.getElementById('departureDateInput');
+        const dateErrorMsg = document.getElementById('dateErrorMsg');
+        const departureDateConfirmMsg = document.getElementById('departureDateConfirmMsg');
+        const departureDateConfirmButtons = document.getElementById('departureDateConfirmButtons');
+        const confirmDateYes = document.getElementById('confirmDateYes');
+        const confirmDateNo = document.getElementById('confirmDateNo');
+        const processButton = document.getElementById('processButton');
+        const statusMessages = document.getElementById('statusMessages');
+        const nmOutput = document.getElementById('nmOutput');
+        const sabreOutput = document.getElementById('sabreOutput');
+        const copyNmBtn = document.getElementById('copyNmBtn');      // NM 복사 버튼
+        const copySabreBtn = document.getElementById('copySabreBtn'); // Sabre 복사 버튼
+
+        // --- Global State (unchanged) ---
+        let hot;
+        let confirmedDepartureDate = null;
+        let passengers = [];
+        let hasInfant = false;
+
+        // --- Helper Functions (unchanged) ---
+        function logStatus(message, type = 'info') { const entry = document.createElement('div'); entry.textContent = message; const typeClasses = { error: 'error', info: 'info', process: 'process', success: 'success' }; if (typeClasses[type]) { entry.classList.add(typeClasses[type]); } statusMessages.appendChild(entry); statusMessages.scrollTop = statusMessages.scrollHeight; }
+        function clearPreviousOutput(clearGrid = false) { statusMessages.innerHTML = ''; nmOutput.textContent = '결과가 여기에 표시됩니다.'; sabreOutput.textContent = '결과가 여기에 표시됩니다.'; passengers = []; hasInfant = false; confirmedDepartureDate = null; departureDateSection.style.display = 'none'; departureDateConfirmMsg.textContent = ''; departureDateConfirmButtons.style.display = 'none'; departureDateInput.value = ''; dateErrorMsg.textContent = ''; processButton.disabled = false; if (clearGrid && hot) { const emptyData = Array.from({ length: 5 }, () => Array(11).fill(null)); hot.loadData(emptyData); logStatus("표의 모든 데이터가 삭제되었습니다.", 'info'); } }
+        function parseYYYYMMDD(dateStr) { if (!/^\d{8}$/.test(dateStr)) return null; const year = parseInt(dateStr.substring(0, 4), 10); const month = parseInt(dateStr.substring(4, 6), 10) - 1; const day = parseInt(dateStr.substring(6, 8), 10); const date = new Date(Date.UTC(year, month, day)); if (date.getUTCFullYear() === year && date.getUTCMonth() === month && date.getUTCDate() === day) { return date; } return null; }
+        function calculateMonths(dobYYYYMMDD, departureYYYYMMDD) { logStatus(`(처리 과정: 유아 만 개월 수 계산 - 생년월일 ${dobYYYYMMDD}, 출발일 ${departureYYYYMMDD})`, 'process'); const dob = parseYYYYMMDD(dobYYYYMMDD); if (!dob) { logStatus(`오류: 유아 생년월일(${dobYYYYMMDD}) 형식이 잘못되었습니다.`, 'error'); return null; } const depParts = departureYYYYMMDD.split('-'); const depYear = parseInt(depParts[0], 10); const depMonth = parseInt(depParts[1], 10) - 1; const depDay = parseInt(depParts[2], 10); const departureDate = new Date(Date.UTC(depYear, depMonth, depDay)); if (dob >= departureDate) { logStatus(`오류: 유아 생년월일(${dobYYYYMMDD})이 출발일(${departureYYYYMMDD})보다 이후입니다.`, 'error'); return 0; } let months = (departureDate.getUTCFullYear() - dob.getUTCFullYear()) * 12; months -= dob.getUTCMonth(); months += departureDate.getUTCMonth(); if (departureDate.getUTCDate() < dob.getUTCDate()) { months--; } const calculatedMonths = months <= 0 ? 0 : months; logStatus(` -> 계산된 만 개월 수: ${calculatedMonths}`, 'info'); return calculatedMonths; }
+        function formatDDMMMYY(dateStr) { const date = parseYYYYMMDD(dateStr); if (!date) return dateStr; const day = String(date.getUTCDate()).padStart(2, '0'); const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]; const month = monthNames[date.getUTCMonth()]; const year = String(date.getUTCFullYear()).slice(-2); return `${day}${month}${year}`; }
+        function isValidDateYYYYMMDD(dateString) { if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) { return false; } const date = new Date(dateString + 'T00:00:00Z'); if (isNaN(date.getTime())) { return false; } return date.toISOString().slice(0, 10) === dateString; }
+
+        // --- Handsontable Configuration (unchanged from v5) ---
+        document.addEventListener('DOMContentLoaded', function() { const columnHeaders = [ '한글명', '영문 성*', '영문 이름*', '전화1', '전화2', '전화3', '이메일', '나이*', '생년월일*<br>(YYYYMMDD)', '성별*<br>(M/F)', '탑승객 유형*<br>(ADT/CHD/INF)' ]; const columns = [ { data: 0 }, { data: 1 }, { data: 2 }, { data: 3, readOnly: true }, { data: 4, readOnly: true }, { data: 5, readOnly: true }, { data: 6, readOnly: true }, { data: 7, type: 'numeric' }, { data: 8 }, { data: 9 }, { data: 10 } ]; const initialData = Array.from({ length: 5 }, () => Array(11).fill(null)); hot = new Handsontable(gridContainer, { data: initialData, rowHeaders: true, colHeaders: columnHeaders, columns: columns, height: 'auto', width: '100%', licenseKey: 'non-commercial-and-evaluation', stretchH: 'all', manualRowResize: true, manualColumnResize: true, contextMenu: ['---------', 'undo', 'redo'], allowInsertRow: true, allowRemoveRow: false, copyPaste: true, fillHandle: true, minSpareRows: 1, beforeChange: (changes, source) => { if (source === 'loadData') return; for (let i = 0; i < changes.length; i++) { const [row, colIndex, oldValue, newValue] = changes[i]; let processedValue = newValue; if (typeof processedValue === 'string') { processedValue = processedValue.trim(); } switch (colIndex) { case 8: if (typeof processedValue === 'string' && /^\d{4}-?\d{2}-?\d{2}$/.test(processedValue)) { const potentialDate = processedValue.replace(/-/g, ''); if (/^\d{8}$/.test(potentialDate)) { processedValue = potentialDate; if (processedValue !== newValue) logStatus(`[Row ${row+1}] 생년월일 형식 변환: ${newValue} -> ${processedValue}`, 'info'); } } break; case 9: if (typeof processedValue === 'string') { const upperVal = processedValue.toUpperCase(); if (upperVal === '남') processedValue = 'M'; else if (upperVal === '여') processedValue = 'F'; if (processedValue !== newValue && ['M','F'].includes(processedValue)) logStatus(`[Row ${row+1}] 성별 변환: ${newValue} -> ${processedValue}`, 'info'); } break; case 10: if (typeof processedValue === 'string') { const upperVal = processedValue.toUpperCase(); if (['성인', 'ADT'].includes(upperVal)) processedValue = 'ADT'; else if (['소아', 'CHD', 'CHILD'].includes(upperVal)) processedValue = 'CHD'; else if (['유아', 'INF', 'INFANT'].includes(upperVal)) processedValue = 'INF'; if (processedValue !== newValue && ['ADT','CHD','INF'].includes(processedValue)) logStatus(`[Row ${row+1}] 탑승객 유형 변환: ${newValue} -> ${processedValue}`, 'info'); } break; } changes[i][3] = processedValue; } }, afterValidate: (isValid, value, row, prop, source) => { const colIndex = typeof prop === 'number' ? prop : hot.propToCol(prop); if (!isValid) { logStatus(`[Row ${row+1}, Col ${colIndex+1}] 유효하지 않은 값: "${value}"`, 'error'); } }, cells: function(row, col, prop) { const cellProperties = {}; if (col === 8) { cellProperties.validator = /^\d{8}$/; cellProperties.allowInvalid = false; cellProperties.placeholder = 'YYYYMMDD'; } else if (col === 9) { cellProperties.validator = /^(M|F)$/i; cellProperties.allowInvalid = false; cellProperties.placeholder = 'M / F'; } else if (col === 10) { cellProperties.validator = /^(ADT|CHD|INF)$/i; cellProperties.allowInvalid = false; cellProperties.placeholder = 'ADT/CHD/INF'; } else if (col === 7) { cellProperties.validator = /^\d+$/; cellProperties.allowInvalid = false; cellProperties.placeholder = '숫자'; } else if ([1, 2].includes(col)) { cellProperties.placeholder = '필수 입력'; } else if (col === 0) { cellProperties.renderer = function(instance, td, row, col, prop, value, cellProperties) { Handsontable.renderers.TextRenderer.apply(this, arguments); td.style.color = '#777'; td.style.fontStyle = 'italic'; }; cellProperties.placeholder = '(무시됨)'; } else if ([3, 4, 5, 6].includes(col)) { cellProperties.readOnly = true; cellProperties.renderer = function(instance, td, row, col, prop, value, cellProperties) { Handsontable.renderers.TextRenderer.apply(this, arguments); td.style.color = '#999'; td.style.fontStyle = 'italic'; }; } return cellProperties; } }); });
+
+        // --- Button Event Listeners ---
+        clearAllBtn.addEventListener('click', () => { if (hot) { clearPreviousOutput(true); } });
+
+        // --- Process Button Event Listener (unchanged from v5) ---
+        processButton.addEventListener('click', () => { clearPreviousOutput(); logStatus("(처리 과정: 엔트리 생성 시작 - 그리드 데이터 읽기)", 'process'); if (!hot) { logStatus("오류: 그리드가 초기화되지 않았습니다.", 'error'); return; } const gridData = hot.getData(); passengers = []; hasInfant = false; let validationOk = true; logStatus("(처리 과정: 그리드 데이터 유효성 검증 및 변환)", 'process'); gridData.forEach((row, index) => { if (!row[1] && !row[2] && !row[7] && !row[8] && !row[9] && !row[10]) { return; } let rowErrors = []; const lastName = row[1]; const firstName = row[2]; const age = row[7]; const dob = row[8]; const gender = row[9]; const type = row[10]; if (!lastName || !String(lastName).trim()) rowErrors.push("영문 성(Col 2)"); if (!firstName || !String(firstName).trim()) rowErrors.push("영문 이름(Col 3)"); if (age === null || age === undefined || !/^\d+$/.test(String(age)) || parseInt(age) < 0) rowErrors.push("나이(Col 8)"); if (!dob || !/^\d{8}$/.test(String(dob).trim())) rowErrors.push("생년월일(Col 9)"); if (!gender || !/^(M|F)$/i.test(String(gender).trim())) rowErrors.push("성별(Col 10)"); if (!type || !/^(ADT|CHD|INF)$/i.test(String(type).trim())) rowErrors.push("탑승객 유형(Col 11)"); if (rowErrors.length > 0) { logStatus(`[Row ${index + 1}] 필수 정보 오류: ${rowErrors.join(', ')}`, 'error'); validationOk = false; } else { const passengerData = { line: index + 1, lastName: String(lastName).trim().toUpperCase(), firstName: String(firstName).trim().toUpperCase(), age: parseInt(age), dob: String(dob).trim(), gender: String(gender).trim().toUpperCase(), type: String(type).trim().toUpperCase(), infantMonths: null }; passengers.push(passengerData); if (passengerData.type === 'INF') { hasInfant = true; } } }); if (!validationOk) { logStatus("오류: 그리드에 유효하지 않은 데이터가 있습니다. 상태 메시지를 확인하고 수정해주세요.", 'error'); processButton.disabled = false; return; } if (passengers.length === 0) { logStatus("처리할 유효한 승객 정보가 그리드에 없습니다.", 'info'); processButton.disabled = false; return; } logStatus(` -> 총 ${passengers.length}명의 유효한 승객 정보 처리 시작. 유아 포함 여부: ${hasInfant}`, 'info'); if (hasInfant) { logStatus("(처리 과정: 출발일 확인 필요 - 사용자 입력 대기)", 'process'); departureDateSection.style.display = 'block'; processButton.disabled = true; } else { logStatus("(처리 과정: 출발일 확인 불필요 확인, 생성 로직 실행)", 'process'); confirmedDepartureDate = null; generateEntries(); } });
+
+        // --- Departure Date Input & Confirmation Logic (unchanged from v5) ---
+        departureDateInput.addEventListener('input', () => { const enteredDate = departureDateInput.value.trim(); dateErrorMsg.textContent = ''; departureDateConfirmMsg.textContent = ''; departureDateConfirmButtons.style.display = 'none'; if (enteredDate === '') { return; } if (isValidDateYYYYMMDD(enteredDate)) { try { const dateObj = new Date(enteredDate + 'T00:00:00Z'); const year = dateObj.getUTCFullYear(); const month = dateObj.getUTCMonth() + 1; const day = dateObj.getUTCDate(); if (dateObj.toISOString().slice(0,10) === enteredDate) { const formattedDate = `${year}년 ${month}월 ${day}일`; logStatus(`(처리 과정: 해석된 날짜 '${formattedDate}' 확인)`, 'process'); departureDateConfirmMsg.textContent = `입력하신 출발일이 ${formattedDate}이 맞으신가요?`; departureDateConfirmButtons.style.display = 'block'; } else { dateErrorMsg.textContent = "유효하지 않은 날짜입니다. (예: 2025-02-30)"; } } catch (e) { dateErrorMsg.textContent = "날짜 처리 중 오류 발생"; } } else { dateErrorMsg.textContent = "YYYY-MM-DD 형식의 유효한 날짜를 입력하세요."; } });
+        confirmDateYes.addEventListener('click', () => { const finalDate = departureDateInput.value.trim(); if (isValidDateYYYYMMDD(finalDate)) { confirmedDepartureDate = finalDate; logStatus(`(처리 과정: 출발일 ${confirmedDepartureDate} 확인 완료)`, 'process'); departureDateSection.style.display = 'none'; departureDateConfirmButtons.style.display = 'none'; generateEntries(); } else { dateErrorMsg.textContent = "유효하지 않은 날짜입니다. 다시 입력해주세요."; departureDateConfirmButtons.style.display = 'none'; } });
+        confirmDateNo.addEventListener('click', () => { logStatus("(처리 과정: 사용자가 날짜 확인 거부 - 재입력 요청)", 'process'); confirmedDepartureDate = null; departureDateConfirmMsg.textContent = "정확한 출발일을 다시 입력해주세요. (YYYY-MM-DD)"; departureDateConfirmButtons.style.display = 'none'; dateErrorMsg.textContent = ''; });
+
+        // --- Entry Generation Function (unchanged from v5) ---
+        function generateEntries() { logStatus("(처리 과정: 준비된 정보 기반 'NM 형식' 및 '세이버 엔트리' 생성)", 'process'); if (passengers.length === 0) { logStatus("처리할 승객 정보가 없습니다.", 'info'); nmOutput.textContent = ""; sabreOutput.textContent = ""; return; } logStatus("(처리 과정: 추출 정보 및 (필요시) 출발일 기반 추가 계산 및 데이터 준비)", 'process'); if (hasInfant && confirmedDepartureDate) { logStatus("(처리 과정: 'INF' 유형 승객의 만 개월 수 계산 시도)", 'process'); passengers.forEach(p => { if (p.type === 'INF') { p.infantMonths = calculateMonths(p.dob, confirmedDepartureDate); if (p.infantMonths === null) { logStatus(`경고: [Row ${p.line}] 유아(${p.lastName}/${p.firstName})의 개월 수 계산에 실패했습니다.`, 'error'); } } }); } else if (hasInfant && !confirmedDepartureDate) { logStatus("경고: 유아(INF)가 포함되어 있으나 출발일이 확인되지 않아, 세이버 엔트리에서 개월 수 정보가 생략됩니다.", 'error'); } logStatus("(처리 과정: NM 형식 규칙 적용)", 'process'); let nmResult = ""; const adtChdPassengers = passengers.filter(p => p.type === 'ADT' || p.type === 'CHD'); const infPassengers = passengers.filter(p => p.type === 'INF'); let currentNmLine = ""; let passengerCountInLine = 0; adtChdPassengers.forEach((p, index) => { const namePart = `${p.lastName}/${p.firstName} `; let codePart = ""; const formattedDobDDMMMYY = formatDDMMMYY(p.dob); if (p.type === 'ADT') { codePart = (p.gender === 'M') ? 'MR' : 'MS'; } else { codePart = (p.gender === 'M') ? `MSTR(CHD/${formattedDobDDMMMYY})` : `MISS(CHD/${formattedDobDDMMMYY})`; } const passengerEntry = namePart + codePart; if (passengerCountInLine === 0) { currentNmLine = "NM1" + passengerEntry; passengerCountInLine = 1; } else { currentNmLine += "1" + passengerEntry; passengerCountInLine++; } if (passengerCountInLine === 9 || index === adtChdPassengers.length - 1) { nmResult += (nmResult ? "\n" : "") + currentNmLine; currentNmLine = ""; passengerCountInLine = 0; } }); infPassengers.forEach(p => { const namePart = `${p.lastName}/${p.firstName}`; const formattedDobDDMMMYY = formatDDMMMYY(p.dob); const codePart = (p.gender === 'M') ? 'MSTR' : 'MISS'; const infantEntry = `(INF${namePart} ${codePart}/${formattedDobDDMMMYY})`; nmResult += (nmResult ? "\n" : "") + infantEntry; }); nmOutput.textContent = nmResult || "생성된 NM 형식이 없습니다."; logStatus(" -> NM 형식 생성 완료.", 'info'); logStatus("(처리 과정: 세이버 형식 규칙 적용 - 수정됨)", 'process'); let sabreResult = ""; let adtChdSabreParts = []; passengers.forEach(p => { if (p.type === 'INF') return; const namePart = `${p.lastName}/${p.firstName} `; let codePart = ""; let suffix = ""; if (p.type === 'ADT') { codePart = (p.gender === 'M') ? 'MR' : 'MS'; suffix = ""; } else if (p.type === 'CHD') { codePart = (p.gender === 'M') ? 'MSTR' : 'MISS'; suffix = `*C${p.age}`; } const passengerEntry = namePart + codePart + suffix; adtChdSabreParts.push(passengerEntry); }); let adtChdSabreLine = ""; if (adtChdSabreParts.length > 0) { adtChdSabreLine = "-" + adtChdSabreParts[0]; for (let i = 1; i < adtChdSabreParts.length; i++) { adtChdSabreLine += "§-" + adtChdSabreParts[i]; } } if (adtChdSabreLine) { sabreResult += adtChdSabreLine; } infPassengers.forEach(p => { const namePart = `${p.lastName}/${p.firstName} `; const codePart = (p.gender === 'M') ? 'MSTR' : 'MISS'; let suffix = ""; if (p.infantMonths !== null) { const formattedMonths = String(p.infantMonths).padStart(2, '0'); suffix = `*I${formattedMonths}`; } const infantEntry = `-I/${namePart}${codePart}${suffix}`; sabreResult += (sabreResult ? "\n" : "") + infantEntry; }); sabreOutput.textContent = sabreResult || "생성된 세이버 형식이 없습니다."; logStatus(" -> 세이버 엔트리 형식 생성 완료.", 'info'); logStatus("--- 모든 처리 완료 ---", 'process'); processButton.disabled = false; }
+
+
+        // --- Copy Button Event Listeners ---
+        copyNmBtn.addEventListener('click', () => {
+            copyToClipboard(nmOutput.textContent, copyNmBtn, "NM 형식");
+        });
+
+        copySabreBtn.addEventListener('click', () => {
+            copyToClipboard(sabreOutput.textContent, copySabreBtn, "Sabre 형식");
+        });
+
+        /**
+         * Copies text to the clipboard and provides feedback.
+         * @param {string} textToCopy The text to copy.
+         * @param {HTMLButtonElement} buttonElement The button that was clicked.
+         * @param {string} formatName Name of the format being copied (for logging).
+         */
+        function copyToClipboard(textToCopy, buttonElement, formatName) {
+            if (!textToCopy || textToCopy === '결과가 여기에 표시됩니다.') {
+                logStatus(`${formatName} 내용이 비어 있어 복사할 수 없습니다.`, 'error');
+                return;
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        // Success feedback
+                        const originalText = buttonElement.textContent;
+                        buttonElement.textContent = '복사됨!';
+                        buttonElement.classList.add('copied');
+                        logStatus(`${formatName} 내용이 클립보드에 복사되었습니다.`, 'success');
+
+                        // Reset button after a delay
+                        setTimeout(() => {
+                            buttonElement.textContent = originalText;
+                            buttonElement.classList.remove('copied');
+                        }, 1500); // 1.5 seconds
+                    })
+                    .catch(err => {
+                        // Error feedback
+                        logStatus(`오류: ${formatName} 내용을 클립보드에 복사하지 못했습니다. (${err.message})`, 'error');
+                        console.error('Clipboard writeText failed:', err);
+                    });
+            } else {
+                // Fallback or error for unsupported browsers
+                logStatus('오류: 클립보드 API가 지원되지 않는 브라우저입니다.', 'error');
+                // Consider implementing document.execCommand('copy') fallback here if needed
+            }
+        }
+
+    </script>
+
+</body>
+</html>
