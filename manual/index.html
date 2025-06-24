@@ -52,7 +52,7 @@
         h2 { font-size: 1.6em; }
         h3 { font-size: 1.3em; border-bottom: 1px solid var(--medium-gray-color); }
         p, li { color: #555; }
-        ul { padding-left: 20px; }
+        ol { padding-left: 20px; }
         code {
             background-color: #eef1f3;
             padding: 0.2em 0.4em;
@@ -94,6 +94,14 @@
             margin-right: 8px;
             color: var(--primary-color);
         }
+        .screenshot {
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid var(--medium-gray-color);
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
         @media (max-width: 768px) {
             body { padding: 10px; }
             .container { padding: 20px; }
@@ -117,9 +125,18 @@
         <div id="how-to-use" class="section">
             <h2><i class="icon fas fa-cogs"></i>2. 사용 방법</h2>
             
-            <h3><i class="icon fas fa-mouse-pointer"></i>Step 1: 탑승객 정보 입력</h3>
-            <p>ERP 시스템의 예약일행 화면에서 <strong>CTRL+Q</strong>를 눌러 복사 모드를 활성화한 후, 탑승객 정보를 복사하여 생성기 화면의 표에 그대로 붙여넣습니다. (<code>Ctrl+V</code>)</p>
-            <p>또는, 아래 '입력 데이터 상세 가이드'를 참고하여 표에 직접 정보를 입력할 수도 있습니다. 필수 항목(<span class="required-mark">*</span>)은 반드시 입력해야 합니다.</p>
+            <h3><i class="icon fas fa-mouse-pointer"></i>Step 1: 탑승객 정보 입력 (ERP 복사 & 붙여넣기)</h3>
+            <p>가장 효율적인 사용법은 ERP 시스템의 데이터를 그대로 복사하여 붙여넣는 것입니다. 아래 순서대로 진행해주세요.</p>
+            <ol>
+                <li>ERP 시스템의 <strong>'예약일행'</strong> 탭으로 이동합니다.</li>
+                <li><strong><code>CTRL+Q</code></strong>를 눌러 복사 모드를 활성화합니다.</li>
+                <li>아래 이미지와 같이 복사할 탑승객 정보 영역을 마우스로 드래그하여 선택한 후, <strong>복사(<code>Ctrl+C</code>)</strong>합니다.</li>
+            </ol>
+            <img src="https://www.naeiltour.co.kr/images/web/%EC%98%88%EC%8B%9C.png" alt="ERP 예약일행 탭 복사 예시" class="screenshot">
+            <ol start="4">
+                <li>GDS 엔트리 생성기 페이지로 돌아와, 표의 첫 번째 셀(가장 왼쪽 위)을 클릭하고 <strong>붙여넣기(<code>Ctrl+V</code>)</strong>합니다.</li>
+            </ol>
+            <p>도구의 표는 ERP의 열 순서와 동일하게 구성되어 있어, 복사한 데이터가 각 항목에 맞게 자동으로 채워집니다. 개별적인 수정이나 추가가 필요할 경우에만 직접 타이핑하여 수정합니다.</p>
             
             <h3><i class="icon fas fa-baby"></i>Step 2: 유아(INF) 동반 시 출발일 입력</h3>
             <p>입력된 정보에 '탑승객 유형'이 <code>INF</code>인 유아가 포함된 경우, 정확한 개월 수 계산을 위해 <strong>여행 출발일 입력 섹션</strong>이 나타납니다.</p>
@@ -195,7 +212,7 @@
         <div id="faq" class="section">
             <h2><i class="icon fas fa-question-circle"></i>4. 자주 묻는 질문 (FAQ)</h2>
             <p><strong>Q. '엔트리 생성' 버튼을 눌렀는데 "입력 오류" 알림이 뜹니다.</strong><br>
-            A. 알림 메시지에 표시된 행의 필수 항목들이 올바른 형식으로 모두 입력되었는지 확인해주세요. 예를 들어 생년월일이 8자리가 아니거나, 나이가 숫자가 아닌 경우 오류가 발생합니다.</p>
+            A. 알림 메시지에 표시된 행의 필수 항목들이 올바른 형식으로 모두 입력되었는지 확인해주세요. 특히 ERP에서 복사한 데이터에 빈 줄이 포함되거나 형식이 다른 경우 오류가 발생할 수 있습니다.</p>
             
             <p><strong>Q. 유아(INF)가 없는데도 출발일을 입력해야 하나요?</strong><br>
             A. 아닙니다. 출발일 입력 섹션은 탑승객 중에 '유형'이 <code>INF</code>인 승객이 있을 경우에만 나타납니다.</p>
