@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDS 엔트리 생성기 - 사용 메뉴얼</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --dark-gray-color: #495057;
+            --text-color: #343a40;
+            --white-color: #ffffff;
+            --light-gray-color: #f8f9fa;
+            --medium-gray-color: #e9ecef;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.8;
+            padding: 20px;
+            margin: 0 auto;
+            background-color: var(--light-gray-color);
+            color: var(--text-color);
+            font-size: 16px;
+            max-width: 900px;
+        }
+        .container {
+            background-color: var(--white-color);
+            padding: 30px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        h1, h2, h3 {
+            color: var(--dark-gray-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 2em;
+            margin-bottom: 1em;
+        }
+        h1 {
+            font-size: 2.2em;
+            text-align: center;
+            border-bottom: none;
+            margin-bottom: 1.5em;
+            color: var(--primary-color);
+        }
+        h2 { font-size: 1.6em; }
+        h3 { font-size: 1.3em; border-bottom: 1px solid var(--medium-gray-color); }
+        p, li { color: #555; }
+        ul { padding-left: 20px; }
+        code {
+            background-color: #eef1f3;
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 90%;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .back-link:hover {
+            background-color: #2980b9;
+        }
+        .section { margin-bottom: 40px; }
+        .data-guide th, .data-guide td {
+            border: 1px solid var(--medium-gray-color);
+            padding: 12px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        .data-guide th {
+            background-color: #f2f7fb;
+            font-weight: 700;
+        }
+        .required-mark {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        .icon {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 20px; }
+            h1 { font-size: 1.8em; }
+            h2 { font-size: 1.4em; }
+            h3 { font-size: 1.2em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> 생성기로 돌아가기</a>
+        <h1><i class="fas fa-book"></i>GDS 엔트리 생성기 사용 메뉴얼</h1>
+
+        <div id="intro" class="section">
+            <h2><i class="icon fas fa-info-circle"></i>1. 소개</h2>
+            <p><strong>GDS 엔트리 생성기</strong>는 여행사 ERP 시스템에서 복사한 탑승객 정보를 GDS(Global Distribution System)에서 사용하는 표준 명령어 형식으로 자동 변환해주는 도구입니다.</p>
+            <p>수작업으로 발생할 수 있는 오류를 줄이고, 항공권 예약 및 발권(PNR 생성) 업무의 효율성을 높이기 위해 제작되었습니다. 특히 유아(INF)의 개월 수 자동 계산 등 편의 기능을 제공합니다.</p>
+        </div>
+
+        <div id="how-to-use" class="section">
+            <h2><i class="icon fas fa-cogs"></i>2. 사용 방법</h2>
+            
+            <h3><i class="icon fas fa-mouse-pointer"></i>Step 1: 탑승객 정보 입력</h3>
+            <p>ERP 시스템의 예약일행 화면에서 <strong>CTRL+Q</strong>를 눌러 복사 모드를 활성화한 후, 탑승객 정보를 복사하여 생성기 화면의 표에 그대로 붙여넣습니다. (<code>Ctrl+V</code>)</p>
+            <p>또는, 아래 '입력 데이터 상세 가이드'를 참고하여 표에 직접 정보를 입력할 수도 있습니다. 필수 항목(<span class="required-mark">*</span>)은 반드시 입력해야 합니다.</p>
+            
+            <h3><i class="icon fas fa-baby"></i>Step 2: 유아(INF) 동반 시 출발일 입력</h3>
+            <p>입력된 정보에 '탑승객 유형'이 <code>INF</code>인 유아가 포함된 경우, 정확한 개월 수 계산을 위해 <strong>여행 출발일 입력 섹션</strong>이 나타납니다.</p>
+            <p><code>YYYY-MM-DD</code> 또는 <code>YYYYMMDD</code> 형식으로 출발일을 입력하면, 생성기가 자동으로 유아의 생년월일을 기준으로 만 개월 수를 계산하여 세이버(Sabre) 엔트리에 반영합니다.</p>
+
+            <h3><i class="icon fas fa-check-double"></i>Step 3: 엔트리 생성 및 결과 확인</h3>
+            <p>정보 입력이 완료되면 <i class="fas fa-cogs"></i> <strong>엔트리 생성</strong> 버튼을 클릭합니다. 시스템은 입력된 값의 유효성을 검사하며, 오류가 있을 경우 해당 행과 필요한 정보를 알려줍니다.</p>
+            <p>성공적으로 처리되면, 하단에 '항공권 NM 형식'과 '세이버(Sabre) 엔트리'가 생성된 것을 확인할 수 있습니다.</p>
+
+            <h3><i class="icon fas fa-copy"></i>Step 4: 결과 복사</h3>
+            <p>각 결과 창의 우측 상단에 있는 <i class="fas fa-copy"></i> <strong>복사</strong> 버튼을 클릭하여 생성된 엔트리를 클립보드에 복사할 수 있습니다. 복사된 엔트리는 GDS 시스템에 바로 붙여넣어 사용할 수 있습니다.</p>
+        </div>
+
+        <div id="data-guide" class="section">
+            <h2><i class="icon fas fa-table"></i>3. 입력 데이터 상세 가이드</h2>
+            <p>표에 입력하는 데이터는 아래의 형식과 규칙을 따라야 합니다. <span class="required-mark">*</span>표시는 필수 입력 항목입니다.</p>
+            <table class="data-guide" style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>설명</th>
+                        <th>입력 형식 / 자동 변환</th>
+                        <th>예시</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>한글명</td>
+                        <td>참고용 정보이며, 실제 엔트리 생성에는 사용되지 않습니다.</td>
+                        <td>-</td>
+                        <td>홍길동</td>
+                    </tr>
+                    <tr>
+                        <td>영문 성<span class="required-mark">*</span></td>
+                        <td>여권에 기재된 영문 성(Last Name)입니다.</td>
+                        <td><code>KIM</code></td>
+                        <td>HONG</td>
+                    </tr>
+                    <tr>
+                        <td>영문 이름<span class="required-mark">*</span></td>
+                        <td>여권에 기재된 영문 이름(First Name)입니다.</td>
+                        <td><code>GILDONG</code></td>
+                        <td>GILDONG</td>
+                    </tr>
+                    <tr>
+                        <td>나이<span class="required-mark">*</span></td>
+                        <td>만 나이입니다.</td>
+                        <td>숫자만 입력</td>
+                        <td>30</td>
+                    </tr>
+                    <tr>
+                        <td>생년월일<span class="required-mark">*</span></td>
+                        <td>8자리 생년월일입니다.</td>
+                        <td><code>YYYYMMDD</code> 형식<br>(예: <code>1990-12-25</code> → <code>19901225</code>로 자동 변환)</td>
+                        <td>19901225</td>
+                    </tr>
+                    <tr>
+                        <td>성별<span class="required-mark">*</span></td>
+                        <td>남/여 또는 M/F로 입력합니다.</td>
+                        <td><code>M</code> 또는 <code>F</code><br>(예: <code>남</code> → <code>M</code>, <code>여</code> → <code>F</code>로 자동 변환)</td>
+                        <td>M</td>
+                    </tr>
+                    <tr>
+                        <td>탑승객 유형<span class="required-mark">*</span></td>
+                        <td>성인, 소아, 유아를 구분합니다.</td>
+                        <td><code>ADT</code>, <code>CHD</code>, <code>INF</code> 중 하나<br>(예: <code>성인</code>→<code>ADT</code>, <code>소아</code>→<code>CHD</code> 자동 변환)</td>
+                        <td>ADT</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="faq" class="section">
+            <h2><i class="icon fas fa-question-circle"></i>4. 자주 묻는 질문 (FAQ)</h2>
+            <p><strong>Q. '엔트리 생성' 버튼을 눌렀는데 "입력 오류" 알림이 뜹니다.</strong><br>
+            A. 알림 메시지에 표시된 행의 필수 항목들이 올바른 형식으로 모두 입력되었는지 확인해주세요. 예를 들어 생년월일이 8자리가 아니거나, 나이가 숫자가 아닌 경우 오류가 발생합니다.</p>
+            
+            <p><strong>Q. 유아(INF)가 없는데도 출발일을 입력해야 하나요?</strong><br>
+            A. 아닙니다. 출발일 입력 섹션은 탑승객 중에 '유형'이 <code>INF</code>인 승객이 있을 경우에만 나타납니다.</p>
+
+            <p><strong>Q. 표의 행이 부족하면 어떻게 하나요?</strong><br>
+            A. 표의 마지막 행에 내용을 입력하면 자동으로 새로운 행이 추가됩니다. 필요한 만큼 행을 추가하여 사용할 수 있습니다.</p>
+        </div>
+    </div>
+</body>
+</html>
